@@ -1,0 +1,74 @@
+[project]
+name = "typed-prompt"
+version = "0.1.0"
+description = "A simple type-safe, validated prompt management system for LLMs"
+readme = "README.md"
+authors = [
+    { name = "SamBroomy", email = "36888606+SamBroomy@users.noreply.github.com" },
+]
+requires-python = ">=3.8"
+keywords = [
+    "llm",
+    "prompt-engineering",
+    "type-safety",
+    "templating",
+    "pydantic",
+    "jinja2",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = ["jinja2>=3.0.1", "pydantic>=2.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/SamBroomy/typed-prompt"
+Documentation = "https://github.com/SamBroomy/typed-prompt#readme"
+Repository = "https://github.com/SamBroomy/typed-prompt.git"
+Changelog = "https://github.com/SamBroomy/typed-prompt/blob/main/CHANGELOG.md"
+
+
+[project.optional-dependencies]
+test = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = """
+-v
+--doctest-modules
+--cov=typed_prompt
+--cov-report=term-missing
+--cov-report=html
+"""
+
+[tool.coverage.run]
+source = ["typed_prompt"]
+branch = true
+omit = ["tests/*", "setup.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass",
+    "raise ImportError",
+]
+show_missing = true
+fail_under = 80
+
+[tool.coverage.html]
+directory = "htmlcov"

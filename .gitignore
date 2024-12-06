@@ -22,3 +22,6 @@
 
 # Allow Python source files
 !**/*.py
+
+# Allow github actions
+!.github/workflows/*.yml

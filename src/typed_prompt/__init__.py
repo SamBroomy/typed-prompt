@@ -77,7 +77,7 @@ class PromptMeta(ModelMetaclass):
     compiled_system_prompt_template: Optional[jinja2.Template]
     compiled_prompt_template: jinja2.Template
 
-    def __new__(  # pylint-ignore: signature-differs
+    def __new__(
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],

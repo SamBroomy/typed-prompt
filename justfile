@@ -160,8 +160,45 @@ stage-all:
     git add -A
 
 [group('git')]
-@commit-message:
+@generate-commit-message:
     ollama run qwen2.5-coder "'Output a very short commit message of the following diffs. Only output message text to pipe into the commit message:\n$(git diff --cached)'"
+
+[group('git')]
+commit-message:
+    #!/bin/bash
+    R='\033[0;31m' # Red
+    Y='\033[0;33m' # Yellow
+    B='\033[0;34m' # Blue
+    END='\033[0m'  # Reset color
+
+    # Generate the commit message
+    COMMIT_MSG=$(just generate-commit-message)
+
+    # Trim leading and trailing whitespace
+    COMMIT_MSG_TRIMMED=$(echo "$COMMIT_MSG" | sed 's/^[ \t]*//;s/[ \t]*$//')
+
+    # Check if the first character is a backtick
+    FIRST_CHAR=$(echo "$COMMIT_MSG_TRIMMED" | cut -c1)
+
+    if [ "$FIRST_CHAR" = '`' ]; then
+        echo -e "${R}Error: ${Y}Commit message generated starts with a backtick.${END}" >&2
+        exit 1
+    fi
+
+    # Optionally, check for JSON or code block patterns
+    if echo "$COMMIT_MSG_TRIMMED" | grep -qE '^\{|\`\`\`|^```|^\[|\('; then
+        echo -e "${R}Error: ${Y}Commit message contains invalid formatting, e.g., JSON or code blocks.${END}" >&2
+        exit 1
+    fi
+
+    # Optionally, ensure the commit message is not empty
+    if [ -z "$COMMIT_MSG_TRIMMED" ]; then
+        echo -e "${R}Error: ${Y}Commit message is empty.${END}" >&2
+        exit 1
+    fi
+
+    # Output the validated commit message without color codes
+    echo "$COMMIT_MSG_TRIMMED"
 
 [group('git')]
 commit-all m="": stage-all
@@ -172,9 +209,9 @@ commit-all m="": stage-all
 commit m="":
     #! /bin/bash
 
-    B='\033[0;34m'    # Blue
+    B='\033[0;34m' # Blue
     Y='\033[0;33m' # Yellow
-    END='\033[0m'        # Reset color
+    END='\033[0m'  # Reset color
     #!/bin/bash
     if [ -z "{{ m }}" ]; then
         m=$(just commit-message)

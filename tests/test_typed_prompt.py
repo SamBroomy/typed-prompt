@@ -34,8 +34,7 @@ class TestBasicPromptFunctionality:
             variables: BasicVariables
 
         vars = BasicVariables(name="Alice", age=30)
-        prompt = SimplePrompt(variables=vars)
-        result = prompt.render()
+        result = SimplePrompt(variables=vars).render()
 
         assert isinstance(result, RenderOutput)
         assert result.system_prompt is not None
@@ -76,16 +75,15 @@ class TestBasicPromptFunctionality:
 
         # Test without optional role
         vars1 = BasicVariables(name="Bob", age=25)
-        prompt1 = OptionalPrompt(variables=vars1)
-        result1 = prompt1.render()
+        result1 = OptionalPrompt(variables=vars1).render()
         assert result1.system_prompt is not None
         assert "Bob" in result1.system_prompt
         assert ")" not in result1.system_prompt
         assert "25" not in result1[1]
 
         vars2 = BasicVariables(name="Bob", age=25, role="developer")
-        prompt2 = OptionalPrompt(variables=vars2)
-        result2 = prompt2.render()
+        result2 = OptionalPrompt(variables=vars2).render()
+
         assert result2.system_prompt is not None
         assert "Bob (developer)" in result2.system_prompt
         assert "25" in result2.system_prompt
@@ -137,8 +135,8 @@ class TestPromptValidation:
                 return super().render(**extra_vars)
 
         vars = BasicVariables(name="Charlie", age=35, role="manager")
-        prompt = RenderVarPrompt(variables=vars)
-        result = prompt.render(topic="Python")
+        result = RenderVarPrompt(variables=vars).render(topic="Python")
+
         assert result.system_prompt is None
         assert "Charlie of 35 who manager wants to learn Python" in result.user_prompt
 
@@ -191,15 +189,15 @@ class TestComplexTemplates:
 
         # Test with role and young age
         vars1 = BasicVariables(name="Eve", age=25, role="developer")
-        prompt1 = ComplexTemplatePrompt(variables=vars1)
-        result1 = prompt1.render()
+        result1 = ComplexTemplatePrompt(variables=vars1).render()
+
         assert result1.system_prompt is not None
         assert "junior developer" in result1.system_prompt
 
         # Test with role and senior age
         vars2 = BasicVariables(name="Frank", age=45, role="developer")
-        prompt2 = ComplexTemplatePrompt(variables=vars2)
-        result2 = prompt2.render()
+        result2 = ComplexTemplatePrompt(variables=vars2).render()
+
         assert result2.system_prompt is not None
         assert "senior developer" in result2.system_prompt
 
@@ -233,7 +231,7 @@ class TestErrorHandling:
         # Test with invalid age type
         with pytest.raises(Exception) as excinfo:
             TypedPrompt(
-                variables=BasicVariables(name="Greg", age="thirty", role="manager")
+                variables=BasicVariables(name="Greg", age="thirty", role="manager")  # type: ignore
             )  # age should be int
 
         assert "type" in str(excinfo.value).lower()
@@ -282,8 +280,8 @@ def test_real_world_scenario():
         config=ArticleConfig(style="technical", max_length=1500, include_examples=True),
     )
 
-    prompt = ArticlePrompt(variables=vars)
-    result = prompt.render()
+    result = ArticlePrompt(variables=vars).render()
+
     assert result.system_prompt is not None
     assert "Helen" in result.system_prompt
     assert "Python Type Hints" in result.system_prompt

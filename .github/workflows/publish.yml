@@ -14,19 +14,9 @@ permissions:
 
 
 jobs:
+
   lint:
     name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Super-Linter
-        uses: super-linter/super-linter@v7.2.0 # x-release-please-version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  fix-lint-issues:
     permissions:
       # To write linting fixes
       contents: write
@@ -84,13 +74,7 @@ jobs:
 
       - name: Run Tests with Coverage
         run: |
-          uv run pytest --cov-report=xml
-
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: true
+          uv run pytest
 
       - name: Minimize uv Cache
         run: uv cache prune --ci

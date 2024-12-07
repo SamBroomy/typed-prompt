@@ -1,0 +1,84 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: no-commit-to-branch
+        args: [--branch, main]
+        stages: [pre-commit]
+      - id: check-added-large-files
+        stages: [pre-commit]
+      - id: check-ast
+        stages: [pre-commit]
+      - id: check-merge-conflict
+        stages: [pre-commit]
+      - id: check-toml
+        stages: [pre-commit]
+      - id: check-yaml
+        stages: [pre-commit]
+      - id: detect-private-key
+        stages: [pre-commit]
+      - id: end-of-file-fixer
+        stages: [pre-commit]
+      - id: mixed-line-ending
+        stages: [pre-commit]
+      - id: trailing-whitespace
+        stages: [pre-commit]
+      - id: sort-simple-yaml
+        stages: [pre-commit]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+        stages: [pre-commit]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  - repo: https://github.com/dosisod/refurb
+    rev: v2.0.0
+    hooks:
+      - id: refurb
+        types: [python]
+        stages: [pre-commit]
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.0
+    hooks:
+      - id: pyupgrade
+        types: [python]
+        stages: [pre-commit]
+
+  - repo: https://github.com/pycqa/pylint
+    rev: v3.3.2
+    hooks:
+      - id: pylint
+        language: system
+        files: ^src/.*\.py$
+        stages: [pre-commit]
+        exclude: ^tests/|^examples/
+
+  - repo: local
+    hooks:
+      - id: print
+        name: print statements
+        entry: just check-print
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: just-fmt
+        name: just fmt
+        entry: just format
+        language: system
+        files: ^justfile$
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: uv
+        name: uv
+        entry: uv lock
+        language: system
+        files: ^pyproject\.toml.uv\.lock$
+        pass_filenames: false
+        stages: [pre-commit]

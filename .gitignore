@@ -10,6 +10,8 @@
 !.python-version
 # Allow pyproject.toml in all directories
 !**/pyproject.toml
+# Allow py.typed in all directories
+!**/py.typed
 # Allow README.md in all directories
 !**/README.md
 # Allow CHANGELOG.md in all directories
@@ -20,3 +22,9 @@
 !**/*.py
 # Allow github actions
 !.github/workflows/*.yml
+# Allow Justfile
+!justfile
+# Allow .pre-commit-config.yaml
+!.pre-commit-config.yaml
+# Allow .editorconfig
+!.editorconfig

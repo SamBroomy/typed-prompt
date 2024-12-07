@@ -25,12 +25,9 @@ from inspect import Parameter, signature
 from textwrap import dedent
 from typing import (
     Any,
-    Dict,
     Generic,
     NamedTuple,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
 )
 
@@ -80,11 +77,12 @@ class PromptMeta(ModelMetaclass):
     compiled_system_prompt_template: Optional[jinja2.Template]
     compiled_prompt_template: jinja2.Template
 
-    def __new__(
+    def __new__(  # pylint-ignore: signature-differs
         mcs,
         cls_name: str,
-        bases: Tuple[Type[Any], ...],
-        namespace: Dict[str, Any],
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        /,
         **kwargs: Any,
     ) -> type:
         """Create a new prompt class with validated templates and compiled Jinja2 templates.
@@ -126,9 +124,9 @@ class PromptMeta(ModelMetaclass):
                 "Both 'prompt_template' and a `variables` model must be defined in the class."
             )
         # Setup and validate templates
-        template_env = cls._setup_template_env()
-        prompt_template = cls._get_template_string(prompt_template)
-        template_node = template_env.parse(prompt_template)
+        template_env: jinja2.Environment = cls._setup_template_env()
+        prompt_template_: str = cls._get_template_string(prompt_template)
+        template_node = template_env.parse(prompt_template_)
         template_vars = meta.find_undeclared_variables(template_node)
         # # Handle system prompt template,
         system_prompt_template: Optional[str] = namespace.get(
@@ -136,8 +134,10 @@ class PromptMeta(ModelMetaclass):
         )
         system_template_vars = set()
         if system_prompt_template:
-            system_prompt_template = cls._get_template_string(system_prompt_template)
-            system_template_node = template_env.parse(system_prompt_template)
+            system_prompt_template_: str = cls._get_template_string(
+                system_prompt_template
+            )
+            system_template_node = template_env.parse(system_prompt_template_)
             system_template_vars = meta.find_undeclared_variables(system_template_node)
         # Validate variable coverage
         template_vars |= system_template_vars
@@ -180,8 +180,6 @@ class PromptMeta(ModelMetaclass):
 
         return cls
 
-    # @staticmethod
-    @classmethod
     def _setup_template_env(cls) -> jinja2.Environment:
         """Initialize and configure the Jinja2 environment.
 

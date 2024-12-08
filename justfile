@@ -123,16 +123,6 @@ run-pre-push:
 [group('git-hooks')]
 run-hooks: install-pre-commit run-pre-commit run-pre-push
 
-# Check for print, ic, and wtf statements
-[group('git-hooks')]
-check-print:
-    #!/bin/bash
-    if ! find ./src ./tests -name '*.py' | xargs grep -nE '((print|ic)\(|wtf)'; then
-        echo "No print statements found." >&2
-    else
-        echo "Found print statements." >&2
-    fi
-
 [group('utils')]
 [no-cd]
 code2prompt:

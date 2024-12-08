@@ -36,39 +36,9 @@ repos:
         stages: [pre-commit]
       - id: ruff-format
         types_or: [python, pyi]
-
-  - repo: https://github.com/dosisod/refurb
-    rev: v2.0.0
-    hooks:
-      - id: refurb
-        types: [python]
-        stages: [pre-commit]
-
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.0
-    hooks:
-      - id: pyupgrade
-        types: [python]
-        stages: [pre-commit]
-
-  - repo: https://github.com/pycqa/pylint
-    rev: v3.3.2
-    hooks:
-      - id: pylint
-        language: system
-        files: ^src/.*\.py$
-        stages: [pre-commit]
-        exclude: ^tests/|^examples/
-
+  # Flake8
   - repo: local
     hooks:
-      - id: print
-        name: print statements
-        entry: just check-print
-        language: system
-        types: [python]
-        pass_filenames: false
-        stages: [pre-commit]
       - id: just-fmt
         name: just fmt
         entry: just format

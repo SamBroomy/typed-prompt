@@ -37,10 +37,8 @@ Changelog = "https://github.com/SamBroomy/typed-prompt/blob/main/CHANGELOG.md"
 dev = [
     "bumpversion>=0.6.0",
     "pre-commit>=4.0.1",
-    "pylint>=3.3.2",
     "pytest>=8.3.4",
     "pytest-cov>=6.0.0",
-    "refurb>=2.0.0",
     "ruff>=0.8.2",
 ]
 
@@ -80,7 +78,74 @@ fail_under = 80
 directory = "htmlcov_report"
 
 [tool.ruff]
-target-version = "py312"
+line-length = 120
+src = ["src", "tests"]
+show-fixes = true
+
+[tool.ruff.lint]
+select = [
+    "F",     # Pyflakes
+    "E",     # Pycodestyle errors
+    "C90",   # McCabe complexity
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # Pyupgrade
+    "ANN",   # Flake8-annotations
+    "ASYNC", # Flake8-async
+    "BLE",   # Flake8-blind-except
+    "FBT",   # Flake8-boolean-trap
+    "B",     # Flake8-bugbear
+    "A",     # Flake8-builtins
+    #"COM",  # Flake9-commas
+    "C4",  # Flake8-comprehensions
+    "EM",  # Flake8-errmsgs
+    "FA",  # Flake8-future-annotations
+    "ISC", # Flake8-implicit-str-concat
+    "LOG", # Flake8-logging
+    "G",   # Flake8-logging-format
+    "INP", # Flake8-no-pep420
+    "PIE", # Flake8-pie
+    "T20", # Flake8-print
+    "PT",  # Flake8-pytest
+    "Q",   # Flake8-quotes
+    "RSE", # Flake8-raise
+    "RET", # Flake8-return
+    #SLF", # Flake8-self
+    "SIM", # Flake8-simplify
+    "TID", # Flake8-tidy-imports
+    "TC",  # Flake8-type-checking
+    "INT", # Flake8-gettext
+    "ARG", # Flake8-unused-arguments
+    "PTH", # Flake8-pathlib
+    "TD",  # Flake8-todo
+    "ERA", # Flake8-eradicate
+    "PLC", # Pylint-convention
+    "PLE", # Pylint-error
+    "PLW", # Pylint-warning
+    #"PLR", # Pylint-refactor
+    "TRY",  # Flake8-tryceratops
+    "FLY",  # Flint
+    "NPY",  # Numpy
+    "FAST", # Fast-Api
+    "PERF", # Perflint
+    "FURB", # Refurb
+    "RUF",  # Ruff
+
+
+]
+preview = true
+# Allow fix for all enabled rules
+fixable = ["ALL"]
+ignore = ["ANN401", "ANN003", "PLC2701", "N804"]
+[tool.ruff.lint.per-file-ignores]
+"examples/user.py" = ["T201", "INP001"]
+"tests/**.py" = ["ANN201", "PT011"]
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+preview = true
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
 
 [tool.bumpversion]
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
@@ -101,19 +166,3 @@ commit_args = ""
 setup_hooks = []
 pre_commit_hooks = []
 post_commit_hooks = []
-
-
-[tool.lint]
-select = ["E", "F"]
-line-length = 120
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py312"
-[tool.lint.per-file-ignores]
-"examples/user.py" = ["E501"]
-
-
-[tool.pylint.format]
-max-line-length = 120
-
-[tool.pylint."messages control"]
-disable = ["too-few-public-methods", "signature-differs", "too-many-locals"]

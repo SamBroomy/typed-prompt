@@ -72,6 +72,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install git
+        run: sudo apt-get install git
+
       - name: Install uv with Caching
         uses: astral-sh/setup-uv@v4
         with:
@@ -84,10 +87,10 @@ jobs:
           python-version: "3.12"
 
       - name: Bump Version, Build, Publish
-        run: \
+        run: |
           git config --global user.email "github-ci@ci.com"
           git config --global user.name "GitHub CI"
-          uvx --from rust-just just publish-package
+          uvx --from rust-just just publish-packageackage
 
       - name: Minimize uv Cache
         run: uv cache prune --ci

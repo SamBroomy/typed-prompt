@@ -67,7 +67,7 @@ jobs:
     needs: test
     permissions:
       id-token: write
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 

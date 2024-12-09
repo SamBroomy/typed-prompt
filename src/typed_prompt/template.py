@@ -83,23 +83,24 @@ class PromptMeta(ModelMetaclass):
         if cls.base_regex.match(cls_name):
             return cls
         # Extract template configuration from class namespace
-        prompt_template: str | None = namespace.get("prompt_template")
+        fetch_prompt_template: str | None = namespace.get("prompt_template")
         # Extract the variables model from the class annotations
         variables_model: BaseModel | None = namespace.get("__annotations__", {}).get("variables")
         # Validate that the template and variables model are defined
-        if not prompt_template or not variables_model:
+        if not fetch_prompt_template or not variables_model:
             raise UndeclaredVariableError
         # Setup and validate templates
         template_env: jinja2.Environment = cls._setup_template_env()
-        prompt_template_: str = cls._get_template_string(prompt_template)
-        template_node = template_env.parse(prompt_template_)
+        prompt_template: str = cls._get_template_string(fetch_prompt_template)
+        template_node = template_env.parse(prompt_template)
         template_vars = meta.find_undeclared_variables(template_node)
         # # Handle system prompt template,
-        system_prompt_template: str | None = namespace.get("system_prompt_template", namespace.get("__doc__"))
+        fetch_system_prompt_template: str | None = namespace.get("system_prompt_template", namespace.get("__doc__"))
+        system_prompt_template: str = ""
         system_template_vars = set()
-        if system_prompt_template:
-            system_prompt_template_: str = cls._get_template_string(system_prompt_template)
-            system_template_node = template_env.parse(system_prompt_template_)
+        if fetch_system_prompt_template:
+            system_prompt_template: str = cls._get_template_string(fetch_system_prompt_template)
+            system_template_node = template_env.parse(system_prompt_template)
             system_template_vars = meta.find_undeclared_variables(system_template_node)
         # Validate variable coverage
         template_vars |= system_template_vars
@@ -125,7 +126,7 @@ class PromptMeta(ModelMetaclass):
 
         # Compile templates
         cls.compiled_system_prompt_template = (
-            template_env.from_string(system_prompt_template) if system_prompt_template else None
+            template_env.from_string(system_prompt_template) if fetch_system_prompt_template else None
         )
         cls.compiled_prompt_template = template_env.from_string(prompt_template)
 
@@ -204,7 +205,7 @@ class BasePrompt(BaseModel, Generic[T], ABC, metaclass=PromptMeta):
 
     class UserPrompt(BasePrompt[UserVariables]):
         \"\"\"You are talking to {{name}}, age {{age}}
-        {%- if occupation %}, a {{occupation}}{% endif %}.\"\"\"
+        {%- if occupation %}, a {{occupation}}{% endif %}.
 
         Please provide a personalized response considering their background.\"\"\"
 

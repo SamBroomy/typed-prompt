@@ -36,7 +36,6 @@ repos:
         stages: [pre-commit]
       - id: ruff-format
         types_or: [python, pyi]
-  # Flake8
   - repo: local
     hooks:
       - id: just-fmt

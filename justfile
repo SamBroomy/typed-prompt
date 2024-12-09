@@ -12,45 +12,6 @@ help:
 bootstrap: clean-venv install-uv install-env run-hooks
 
 [group('ci')]
-bump:
-    #! /bin/bash
-
-    project_version() {
-      grep -E '^version = "[0-9]+\.[0-9]\.[0-9]+"$' ${1:?} | head -n 1 | awk '{print $3}' | tr -d '"'
-    }
-
-    BRANCH=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_BRANCH}
-    echo BRANCH \'$BRANCH\'.
-    MAJOR_RE='\(MAJOR\)'
-    MINOR_RE='\(MINOR\)'
-    if [[ "$CI_COMMIT_MESSAGE" =~ $MAJOR_RE ]]; then
-      bump=major
-    elif [[ "$CI_COMMIT_MESSAGE" =~ $MINOR_RE ]]; then
-      bump=minor
-    else
-      bump=patch
-    fi
-    git fetch --all
-    git checkout -B $BRANCH
-    git branch --set-upstream-to=origin/$BRANCH
-
-    ROOT_VERSION=$(project_version ./pyproject.toml)
-    uvx bump-my-version bump --current-version $ROOT_VERSION $bump ./pyproject.toml
-    NEW_VERSION=$(project_version ./pyproject.toml)
-
-    find . -mindepth 2 -type f -name pyproject.toml | while read pyproject_file; do
-        CURRENT_VERSION=$(project_version $pyproject_file)
-        uvx bump-my-version bump --current-version $CURRENT_VERSION --new-version $NEW_VERSION $bump $pyproject_file
-    done
-    uv lock
-    MESSAGE="Bump version ($bump): $ROOT_VERSION -> $NEW_VERSION [skip-ci]"
-    echo $MESSAGE
-    git commit -am "$MESSAGE"
-    git tag -am "$MESSAGE" "$NEW_VERSION"
-    git push origin $BRANCH -o ci.skip
-    git push origin $NEW_VERSION -o ci.skip
-
-[group('ci')]
 build:
     uv build -o dist --all-packages
 
@@ -59,7 +20,7 @@ publish:
     uv publish
 
 [group('ci')]
-publish-package: bump build publish
+publish-package: build publish
 
 # Install uv
 [group('env')]

@@ -90,7 +90,7 @@ jobs:
         run: |
           git config --global user.email "github-ci@ci.com"
           git config --global user.name "GitHub CI"
-          uvx --from rust-just just publish-packageackage
+          uvx --from rust-just just publish-package
 
       - name: Minimize uv Cache
         run: uv cache prune --ci

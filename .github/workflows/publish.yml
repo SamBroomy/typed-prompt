@@ -18,38 +18,20 @@ permissions:
 jobs:
 
   lint:
-    name: Lint
-    permissions:
-      # To write linting fixes
-      contents: write
-      # To write Super-linter status checks
-      statuses: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install uv with Caching
+        uses: astral-sh/setup-uv@v4
         with:
-          fetch-depth: 0
-      - name: Super-Linter
-        uses: super-linter/super-linter@v7.2.0 # x-release-please-version
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FIX_MARKDOWN_PRETTIER: true
-          FIX_PYTHON: true
-          FIX_YAML_PRETTIER: true
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
 
-      - name: Commit and push linting fixes
-        # Run only on:
-        # - Pull requests
-        # - Not on the default branch
-        if: >
-          github.event_name == 'pull_request' &&
-          github.ref_name != github.event.repository.default_branch
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
-          commit_message: "chore: fix linting issues"
-          commit_user_name: super-linter
-          commit_user_email: super-linter@super-linter.dev
+      - name: Install Dependencies
+        run: |
+            uv sync --dev
+      - name: Run Ruff
+        run: ruff check --output-format=github .
   test:
     name: Run Tests
     runs-on: ubuntu-latest

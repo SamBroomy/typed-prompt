@@ -288,27 +288,6 @@ Structure your templates for maximum readability and maintainability:
        system_prompt_template = f.read()
    ```
 
-### Variable Management
-
-Follow these guidelines for robust variable handling:
-
-1. **Required vs Optional**: Use the variables model for required, reusable variables and render method parameters for optional or context-specific variables.
-
-2. **Type Hints**: Always use explicit type hints in your variable models:
-
-   ```python
-   class Variables(BaseModel):
-       user_id: int
-       name: str
-       preferences: Optional[dict[str, Any]] = None
-   ```
-
-3. **Default Values**: Provide sensible defaults for optional variables:
-
-   ```python
-   def render(self, *, difficulty: str = "intermediate", **extra_vars) -> RenderOutput:
-   ```
-
 ## Common Patterns
 
 ### Conditional Content

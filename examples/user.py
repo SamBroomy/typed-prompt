@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 from typed_prompt import BasePrompt, RenderOutput
@@ -18,7 +16,7 @@ class ChatConfig(BaseModel):
 class ChatVariables(BaseModel):
     username: str
     role: str
-    expertise_level: Optional[str] = "beginner"
+    expertise_level: str | None = "beginner"
 
 
 class ChatPrompt(BasePrompt[ChatVariables]):
@@ -36,8 +34,8 @@ class ChatPrompt(BasePrompt[ChatVariables]):
 
 # Usage
 chat_config = ChatConfig(temperature=0.9, streaming=False)
-vars = ChatVariables(username="Alice", role="developer", expertise_level="intermediate")
-prompt = ChatPrompt(variables=vars, config=chat_config)
+var = ChatVariables(username="Alice", role="developer", expertise_level="intermediate")
+prompt = ChatPrompt(variables=var, config=chat_config)
 result = prompt.render(topic="Python metaclasses")
 print(f"System: {result.system_prompt}")
 print(f"User: {result.user_prompt}")
@@ -52,6 +50,7 @@ try:
         # is not defined in ChatVariables or render method
         prompt_template: str = "Please explain {{unknown_var}}"
         variables: ChatVariables
+
 except ValueError as e:
     print(f"Validation Error: {e}")
 
@@ -65,6 +64,7 @@ try:
         # are defined but never used in templates
         prompt_template: str = "Hello {{username}}!"
         variables: ChatVariables
+
 except ValueError as e:
     print(f"Unused Variables Error: {e}")
 
@@ -76,16 +76,14 @@ class ReviewConfig(BaseModel):
     temperature: float = Field(default=0.8, ge=0, le=2)
     max_tokens: int = Field(default=1000, gt=0)
     model: str = Field(default="gpt-4")
-    review_depth: str = Field(
-        default="detailed", pattern="^(brief|detailed|security-focused)$"
-    )
+    review_depth: str = Field(default="detailed", pattern="^(brief|detailed|security-focused)$")
 
 
 class ReviewVariables(BaseModel):
     reviewer_name: str
     programming_language: str
-    code_context: Optional[str] = None
-    review_focus: List[str] = Field(default_factory=list)
+    code_context: str | None = None
+    review_focus: list[str] = Field(default_factory=list)
 
 
 class CodeReviewPrompt(BasePrompt[ReviewVariables]):
@@ -116,20 +114,13 @@ class CodeReviewPrompt(BasePrompt[ReviewVariables]):
     config: ReviewConfig = Field(default_factory=ReviewConfig)
 
     def render(
-        self,
-        *,
-        code_snippet: str,
-        specific_concerns: Optional[str] = None,
-        review_depth: str = "detailed",
-        **extra_vars,
+        self, *, code_snippet: str, specific_concerns: str | None = None, review_depth: str = "detailed", **extra_vars
     ) -> RenderOutput:
-        extra_vars.update(
-            {
-                "code_snippet": code_snippet,
-                "specific_concerns": specific_concerns,
-                "review_depth": review_depth,
-            }
-        )
+        extra_vars.update({
+            "code_snippet": code_snippet,
+            "specific_concerns": specific_concerns,
+            "review_depth": review_depth,
+        })
         return super().render(**extra_vars)
 
 

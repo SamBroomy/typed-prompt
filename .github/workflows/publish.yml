@@ -31,7 +31,7 @@ jobs:
         run: |
             uv sync --dev
       - name: Run Ruff
-        run: ruff check --output-format=github .
+        run: uv run ruff check --output-format=github .
   test:
     name: Run Tests
     runs-on: ubuntu-latest

@@ -59,7 +59,7 @@ publish:
     uv publish
 
 [group('ci')]
-publish-package: build publish
+publish-package: bump build publish
 
 # Install uv
 [group('env')]

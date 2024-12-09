@@ -84,7 +84,10 @@ jobs:
           python-version: "3.12"
 
       - name: Bump Version, Build, Publish
-        run: uvx --from rust-just just publish-package
+        run: \
+          git config --global user.email "github-ci@ci.com"
+          git config --global user.name "GitHub CI"
+          uvx --from rust-just just publish-package
 
       - name: Minimize uv Cache
         run: uv cache prune --ci

@@ -1,3 +1,9 @@
+[![Super-Linter](https://github.com/<OWNER>/<REPOSITORY>/actions/workflows/<WORKFLOW_FILE_NAME>/badge.svg)](https://github.com/marketplace/actions/super-linter)
+[![codecov](https://codecov.io/gh/abdurohman/typed-prompt/branch/main/graph/badge.svg?token=JZQZQZQZQZ)](https://codecov.io/gh/abdurohman/typed-prompt)
+[![PyPI version](https://badge.fury.io/py/typed-prompt.svg)](https://badge.fury.io/py/typed-prompt)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/typed-prompt)](https://pypi.org/project/typed-prompt/)
+[![GitHub license](https://img.shields.io/github/license/abdurohman/typed-prompt)]
+
 # typed-prompt
 
 A type-safe, validated prompt management system for LLMs that catches errors early, enforces type safety, and provides a structured way to manage prompts.

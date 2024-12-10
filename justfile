@@ -22,6 +22,45 @@ publish:
 [group('ci')]
 publish-package: build publish
 
+[group('ci')]
+bump:
+    #! /bin/bash
+
+    project_version() {
+      grep -E '^version = "[0-9]+\.[0-9]\.[0-9]+"$' ${1:?} | head -n 1 | awk '{print $3}' | tr -d '"'
+    }
+
+    BRANCH=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_BRANCH}
+    echo BRANCH \'$BRANCH\'.
+    MAJOR_RE='\(MAJOR\)'
+    MINOR_RE='\(MINOR\)'
+    if [[ "$CI_COMMIT_MESSAGE" =~ $MAJOR_RE ]]; then
+      bump=major
+    elif [[ "$CI_COMMIT_MESSAGE" =~ $MINOR_RE ]]; then
+      bump=minor
+    else
+      bump=patch
+    fi
+    git fetch --all
+    git checkout -B $BRANCH
+    git branch --set-upstream-to=origin/$BRANCH
+
+    ROOT_VERSION=$(project_version ./pyproject.toml)
+    uvx bump-my-version bump --current-version $ROOT_VERSION $bump ./pyproject.toml
+    NEW_VERSION=$(project_version ./pyproject.toml)
+
+    find . -mindepth 2 -type f -name pyproject.toml | while read pyproject_file; do
+        CURRENT_VERSION=$(project_version $pyproject_file)
+        uvx bump-my-version bump --current-version $CURRENT_VERSION --new-version $NEW_VERSION $bump $pyproject_file
+    done
+    uv lock
+    MESSAGE="Bump version ($bump): $ROOT_VERSION -> $NEW_VERSION [skip-ci]"
+    echo $MESSAGE
+    git commit -am "$MESSAGE"
+    git tag -am "$MESSAGE" "$NEW_VERSION"
+    git push origin $BRANCH -o ci.skip
+    git push origin $NEW_VERSION -o ci.skip
+
 # Install uv
 [group('env')]
 install-uv:
@@ -111,8 +150,11 @@ stage-all:
     git add -A
 
 [group('git')]
-@generate-commit-message:
-    ollama run qwen2.5-coder "'Output a very short commit message of the following diffs. Only output message text to pipe into the commit message:\n$(git diff --cached)'"
+generate-commit-message:
+    @(echo "Generate a concise git commit message (max 72 chars) for these changes:"; \
+    echo "\n# Files changed\n\n\`\`\`\n$(git diff --cached --stat --compact-summary)\n\`\`\`\n\n"; \
+    echo "\n# Detailed changes\n\n\`\`\`\n$(git diff --cached --unified=1 --minimal)\n\`\`\`\n\n") | \
+    ollama run qwen2.5-coder "You are a commit message generator. Output only the commit message text in imperative mood. No formatting, JSON, or code blocks or JSON. Examples: 'Add user authentication', 'Fix memory leak in worker', 'Update API docs'.\n\n"
 
 [group('git')]
 commit-message:
@@ -160,7 +202,11 @@ commit m="":
     Y='\033[0;33m' # Yellow
     END='\033[0m'  # Reset color
     if [ -z "{{ m }}" ]; then
-        m=$(just commit-message)
+        # Capture both output and exit status
+        if ! m=$(just commit-message); then
+            echo -e "${R}Error: ${Y}Failed to generate commit message${END}" >&2
+            exit 1
+        fi
     else
         m="{{ m }}"
     fi

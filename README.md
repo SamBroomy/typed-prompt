@@ -1,3 +1,6 @@
+[![PyPI version](https://badge.fury.io/py/typed-prompt.svg)](https://badge.fury.io/py/typed-prompt)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/typed-prompt)](https://pypi.org/project/typed-prompt/)
+
 # typed-prompt
 
 A type-safe, validated prompt management system for LLMs that catches errors early, enforces type safety, and provides a structured way to manage prompts.
@@ -48,35 +51,7 @@ class UnusedVarPrompt(BasePrompt[UserVars]):
     variables: UserVars
 ```
 
-### 2. Custom Configuration
-
-```python
-from typed_prompt import RenderOutput
-from pydantic import BaseModel, Field
-
-
-class MyConfig(BaseModel):
-    temperature: float = Field(default=0.7, ge=0, le=2)
-    model: str = Field(default="gpt-4")
-
-class MyPrompt(BasePrompt[UserVars]):
-    """Assistant for {{name}}"""
-    prompt_template: str = "Help with {{topic}}"
-    variables: UserVars
-    config: MyConfig = Field(default_factory=MyConfig)
-
-    def render(self, *, topic: str, **extra_vars) -> RenderOutput:
-        extra_vars["topic"] = topic
-        return super().render(**extra_vars)
-
-# Use custom config
-prompt = MyPrompt(
-    variables=UserVars(name="Alice", expertise="intermediate"),
-    config=MyConfig(temperature=0.9, model="gpt-3.5-turbo")
-)
-```
-
-### 3. Conditional Templates
+### 2. Conditional Templates
 
 ```python
 from typing import Union
@@ -105,6 +80,34 @@ class ConditionalPrompt(BasePrompt[TemplateVars]):
     def render(self, *, topic: str, **extra_vars) -> RenderOutput:
         extra_vars["topic"] = topic
         return super().render(**extra_vars)
+```
+
+### 3. LLM configuration defined with the template
+
+```python
+from typed_prompt import RenderOutput
+from pydantic import BaseModel, Field
+
+
+class MyConfig(BaseModel):
+    temperature: float = Field(default=0.7, ge=0, le=2)
+    model: str = Field(default="gpt-4")
+
+class MyPrompt(BasePrompt[UserVars]):
+    """Assistant for {{name}}"""
+    prompt_template: str = "Help with {{topic}}"
+    variables: UserVars
+    config: MyConfig = Field(default_factory=MyConfig)
+
+    def render(self, *, topic: str, **extra_vars) -> RenderOutput:
+        extra_vars["topic"] = topic
+        return super().render(**extra_vars)
+
+# Use custom config
+prompt = MyPrompt(
+    variables=UserVars(name="Alice", expertise="intermediate"),
+    config=MyConfig(temperature=0.9, model="gpt-3.5-turbo")
+)
 ```
 
 > **Note**: Using None as a value for optional variables will render as `None` in the prompt.
@@ -233,12 +236,13 @@ For complex prompts, you can load templates from external files:
 
 ```python
 class ComplexPrompt(BasePrompt[ComplexVariables]):
-    with open("templates/system_prompt.j2") as f:
-        system_prompt_template = f.read()
+    system_prompt_template = Path("templates/system_prompt.j2").read_text()
 
-    with open("templates/user_prompt.j2") as f:
-        prompt_template = f.read()
+    prompt_template: str = Path("templates/user_prompt.j2").read_text()
+
 ```
+
+> **Note**: With templating engines like Jinja2, you can normally hot reload templates, but this is not supported in typed-prompt as the templates are validated at class definition time.
 
 ## API Reference
 
@@ -284,8 +288,7 @@ Structure your templates for maximum readability and maintainability:
 2. **Separate Complex Templates**: For longer templates, use external files:
 
    ```python
-   with open("templates/system_prompt.j2") as f:
-       system_prompt_template = f.read()
+    system_prompt_template = Path("templates/system_prompt.j2").read_text()
    ```
 
 ## Common Patterns

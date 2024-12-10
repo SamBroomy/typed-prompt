@@ -2,7 +2,7 @@ import jinja2
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
-from typed_prompt import BasePrompt, RenderOutput
+from typed_prompt import BasePrompt, RenderedOutput
 from typed_prompt.exceptions import MissingVariablesError, UndeclaredVariableError, UnusedVariablesError
 
 
@@ -36,7 +36,7 @@ class TestBasicPromptFunctionality:
         var = BasicVariables(name="Alice", age=30)
         result = SimplePrompt(variables=var).render()
 
-        assert isinstance(result, RenderOutput)
+        assert isinstance(result, RenderedOutput)
         assert result.system_prompt is not None
         assert "Hello Alice, you are 30 years old" in result.system_prompt
         assert result.user_prompt == "What would you like to know?"
@@ -70,7 +70,7 @@ class TestBasicPromptFunctionality:
             prompt_template: str = "Hello!"
             variables: BasicVariables
 
-            def render(self, **extra_vars) -> RenderOutput:
+            def render(self, **extra_vars) -> RenderedOutput:
                 return super().render(**extra_vars)
 
         # Test without optional role
@@ -100,7 +100,7 @@ class TestPromptValidation:
                 prompt_template: str = "What is {{undefined_var}}?"
                 variables: BasicVariables
 
-                def render(self, **extra_vars) -> RenderOutput:
+                def render(self, **extra_vars) -> RenderedOutput:
                     return super().render(**extra_vars)
 
         assert {"undefined_var"} == excinfo.value.missing_variables
@@ -113,7 +113,7 @@ class TestPromptValidation:
                 prompt_template: str = "Hello {{name}}!"  # 'age' and 'role' unused
                 variables: BasicVariables
 
-                def render(self, **extra_vars) -> RenderOutput:
+                def render(self, **extra_vars) -> RenderedOutput:
                     return super().render(**extra_vars)
 
         assert {"age", "role"} == excinfo.value.unused_variables
@@ -125,7 +125,7 @@ class TestPromptValidation:
             prompt_template: str = "{{name}} of {{age}} who {{role}} wants to learn {{topic}}"
             variables: BasicVariables
 
-            def render(self, *, topic: str, **extra_vars) -> RenderOutput:
+            def render(self, *, topic: str, **extra_vars) -> RenderedOutput:
                 extra_vars["topic"] = topic
                 return super().render(**extra_vars)
 
@@ -147,7 +147,7 @@ class TestConfigurationIntegration:
             variables: BasicVariables
             config: BasicConfig = Field(default_factory=BasicConfig)
 
-            def render(self, **extra_vars) -> RenderOutput:
+            def render(self, **extra_vars) -> RenderedOutput:
                 return super().render(**extra_vars)
 
         var = BasicVariables(name="David", age=40)
@@ -180,7 +180,7 @@ class TestComplexTemplates:
             prompt_template: str = "Hello!"
             variables: BasicVariables
 
-            def render(self, **extra_vars) -> RenderOutput:
+            def render(self, **extra_vars) -> RenderedOutput:
                 return super().render(**extra_vars)
 
         # Test with role and young age
@@ -210,7 +210,7 @@ class TestErrorHandling:
                 prompt_template: str = "Hello {{if name}}, {{age}}, {{role}}"  # Invalid syntax
                 variables: BasicVariables
 
-                def render(self, **extra_vars) -> RenderOutput:
+                def render(self, **extra_vars) -> RenderedOutput:
                     return super().render(**extra_vars)
 
     def test_type_validation(self):
@@ -220,7 +220,7 @@ class TestErrorHandling:
             prompt_template: str = "{{name}} is {{age}} and is a {{role}}"
             variables: BasicVariables
 
-            def render(self, **extra_vars) -> RenderOutput:
+            def render(self, **extra_vars) -> RenderedOutput:
                 return super().render(**extra_vars)
 
         # Test with invalid age type
@@ -299,7 +299,7 @@ class TestPromptTemplateNotDefined:
             class NoTemplatePrompt(BasePrompt[BasicVariables]):  # pylance: disable=not-accessed
                 variables: BasicVariables
 
-                def render(self, **extra_vars) -> RenderOutput:
+                def render(self, **extra_vars) -> RenderedOutput:
                     return super().render(**extra_vars)
 
         assert str(excinfo.value) == "Undeclared Variables"
@@ -316,7 +316,7 @@ class TestVairableModelNotDefined:
                 prompt_template: str = "Hello {{name}}"
                 variables: BasicVariables
 
-                def render(self, **extra_vars) -> RenderOutput:
+                def render(self, **extra_vars) -> RenderedOutput:
                     return super().render(**extra_vars)
 
         assert excinfo.value.unused_variables == {"role", "age"}
@@ -332,7 +332,7 @@ class TestVariablesNotDefined:
             class NoVariablesPrompt(BasePrompt[BasicVariables]):  # pylance: disable=not-accessed
                 prompt_template: str = "Hello {{name}}"
 
-                def render(self, **extra_vars) -> RenderOutput:
+                def render(self, **extra_vars) -> RenderedOutput:
                     return super().render(**extra_vars)
 
         assert str(excinfo.value) == "Undeclared Variables"

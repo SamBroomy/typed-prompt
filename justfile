@@ -111,8 +111,11 @@ stage-all:
     git add -A
 
 [group('git')]
-@generate-commit-message:
-    ollama run qwen2.5-coder "'Output a very short commit message of the following diffs. Only output message text to pipe into the commit message:\n$(git diff --cached)'"
+generate-commit-message:
+    @(echo "Generate a concise git commit message (max 72 chars) for these changes:"; \
+    echo "\n# Files changed\n\n\`\`\`\n$(git diff --cached --stat --compact-summary)\n\`\`\`\n\n"; \
+    echo "\n# Detailed changes\n\n\`\`\`\n$(git diff --cached --unified=1 --minimal)\n\`\`\`\n\n") | \
+    ollama run qwen2.5-coder "You are a commit message generator. Output only the commit message text in imperative mood. No formatting, JSON, or code blocks or JSON. Examples: 'Add user authentication', 'Fix memory leak in worker', 'Update API docs'.\n\n"
 
 [group('git')]
 commit-message:
@@ -160,7 +163,11 @@ commit m="":
     Y='\033[0;33m' # Yellow
     END='\033[0m'  # Reset color
     if [ -z "{{ m }}" ]; then
-        m=$(just commit-message)
+        # Capture both output and exit status
+        if ! m=$(just commit-message); then
+            echo -e "${R}Error: ${Y}Failed to generate commit message${END}" >&2
+            exit 1
+        fi
     else
         m="{{ m }}"
     fi

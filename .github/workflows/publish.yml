@@ -1,8 +1,5 @@
 ---
 name: CI Pipeline
-# git commit -m "Release v0.1.0"
-# git tag v0.1.0
-# git push origin main v0.1.0
 
 on:
   push:
@@ -85,7 +82,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Bump Version, Build, Publish
+      - name: Build, Publish
         run: |
           uvx --from rust-just just publish-package
 

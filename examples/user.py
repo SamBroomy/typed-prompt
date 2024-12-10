@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from typed_prompt import BasePrompt, RenderOutput
+from typed_prompt import BasePrompt, RenderedOutput
 
 
 # Example 1: Basic Prompt with Custom Configuration
@@ -27,7 +27,7 @@ class ChatPrompt(BasePrompt[ChatVariables]):
     variables: ChatVariables
     config: ChatConfig = Field(default_factory=ChatConfig)
 
-    def render(self, *, topic: str, **extra_vars) -> RenderOutput:
+    def render(self, *, topic: str, **extra_vars) -> RenderedOutput:
         extra_vars["topic"] = topic
         return super().render(**extra_vars)
 
@@ -115,7 +115,7 @@ class CodeReviewPrompt(BasePrompt[ReviewVariables]):
 
     def render(
         self, *, code_snippet: str, specific_concerns: str | None = None, review_depth: str = "detailed", **extra_vars
-    ) -> RenderOutput:
+    ) -> RenderedOutput:
         extra_vars.update({
             "code_snippet": code_snippet,
             "specific_concerns": specific_concerns,

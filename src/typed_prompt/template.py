@@ -5,14 +5,12 @@ from textwrap import dedent
 from typing import Any, Generic, NamedTuple, TypeVar
 
 import jinja2
+import jinja2.meta
 import jinja2.nodes
-from jinja2 import meta
 from pydantic import BaseModel, ConfigDict
 from pydantic._internal._model_construction import ModelMetaclass
 
 from typed_prompt.exceptions import MissingVariablesError, UndeclaredVariableError, UnusedVariablesError
-
-T = TypeVar("T", bound=BaseModel)
 
 
 class PromptMeta(ModelMetaclass):
@@ -48,7 +46,7 @@ class PromptMeta(ModelMetaclass):
         If validation fails, clear error messages are provided:
         - Missing variables: "Template uses variables not defined..."
         - Unused variables: "Variables defined but not used..."
-        - Missing templates: "Both 'prompt_template' and variables..."
+        - Missing templates: "Both 'prompt_template' and a 'variables' model must be defined..."
     """
 
     compiled_system_prompt_template: jinja2.Template | None
@@ -93,15 +91,15 @@ class PromptMeta(ModelMetaclass):
         template_env: jinja2.Environment = cls._setup_template_env()
         prompt_template: str = cls._get_template_string(fetch_prompt_template)
         template_node = template_env.parse(prompt_template)
-        template_vars = meta.find_undeclared_variables(template_node)
-        # # Handle system prompt template,
+        template_vars = jinja2.meta.find_undeclared_variables(template_node)
+        # Handle system prompt template
         fetch_system_prompt_template: str | None = namespace.get("system_prompt_template", namespace.get("__doc__"))
         system_prompt_template: str = ""
         system_template_vars = set()
         if fetch_system_prompt_template:
             system_prompt_template: str = cls._get_template_string(fetch_system_prompt_template)
             system_template_node = template_env.parse(system_prompt_template)
-            system_template_vars = meta.find_undeclared_variables(system_template_node)
+            system_template_vars = jinja2.meta.find_undeclared_variables(system_template_node)
         # Validate variable coverage
         template_vars |= system_template_vars
         variable_fields = set(variables_model.model_fields.keys())
@@ -155,7 +153,7 @@ class PromptMeta(ModelMetaclass):
         return dedent(template_string).strip()
 
 
-class RenderOutput(NamedTuple):
+class RenderedOutput(NamedTuple):
     """Structured output from prompt rendering.
 
     This class provides named access to the rendered system and user prompts,
@@ -167,7 +165,6 @@ class RenderOutput(NamedTuple):
 
     Example:
         ```python
-        result 0.17.0
         print(f"System: {result.system_prompt}")
         print(f"User: {result.user_prompt}")
         ```
@@ -175,6 +172,9 @@ class RenderOutput(NamedTuple):
 
     system_prompt: str | None
     user_prompt: str
+
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class BasePrompt(BaseModel, Generic[T], ABC, metaclass=PromptMeta):
@@ -226,10 +226,6 @@ class BasePrompt(BaseModel, Generic[T], ABC, metaclass=PromptMeta):
             return super().render(**extra_vars)
 
 
-    # Usage
-    variables 0.0.1
-    prompt 0.4.1
-    result 0.17.0
     ```
 
     Notes:
@@ -248,7 +244,7 @@ class BasePrompt(BaseModel, Generic[T], ABC, metaclass=PromptMeta):
 
     model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
 
-    def render(self, **extra_vars: Any) -> RenderOutput:
+    def render(self, **extra_vars: Any) -> RenderedOutput:
         """Render prompt templates with provided variables.
 
         This method combines the variables model data with any additional variables
@@ -283,4 +279,17 @@ class BasePrompt(BaseModel, Generic[T], ABC, metaclass=PromptMeta):
         )
         user_prompt = self.compiled_prompt_template.render(**context).strip()
 
-        return RenderOutput(system_prompt, user_prompt)
+        return RenderedOutput(system_prompt, user_prompt)
+
+    async def render_async(self, **extra_vars: Any) -> RenderedOutput:
+        variables_dict = self.variables.model_dump()
+        context = {**variables_dict, **extra_vars}
+
+        system_prompt = (
+            (await self.compiled_system_prompt_template.render_async(**context)).strip()
+            if self.compiled_system_prompt_template
+            else None
+        )
+        user_prompt = (await self.compiled_prompt_template.render_async(**context)).strip()
+
+        return RenderedOutput(system_prompt, user_prompt)

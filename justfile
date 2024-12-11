@@ -129,7 +129,7 @@ code2prompt:
     code2prompt ./ \
         --tokens \
         --relative-paths \
-        --include "packages/**,src/**,justfile,*.toml,*.md,*.py,*.prompty,*.yml" \
+        --include "packages/**,src/**,justfile,*.toml,*.md,*.py,*.yml" \
         --include-priority \
         --exclude "**" \
         --exclude-from-tree

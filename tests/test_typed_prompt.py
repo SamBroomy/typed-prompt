@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 from typed_prompt import BasePrompt, RenderedOutput
 from typed_prompt.exceptions import MissingVariablesError, UndeclaredVariableError, UnusedVariablesError
+from typed_prompt.template import AsyncBasePrompt
 
 
 class BasicVariables(BaseModel):
@@ -84,31 +85,6 @@ class TestBasicPromptFunctionality:
         vars2 = BasicVariables(name="Bob", age=25, role="developer")
         result2 = OptionalPrompt(variables=vars2).render()
 
-        assert result2.system_prompt is not None
-        assert "Bob (developer)" in result2.system_prompt
-        assert "25" in result2.system_prompt
-
-    @pytest.mark.asyncio
-    async def test_async_render(self):
-        """Test that the async render method works correctly."""
-
-        class OptionalPrompt(BasePrompt[BasicVariables]):
-            """{{name}} {% if role %}({{role}}) - {{age}}{% endif %}"""
-
-            prompt_template: str = "Hello!"
-            variables: BasicVariables
-
-            def render(self, **extra_vars) -> RenderedOutput:
-                return super().render(**extra_vars)
-
-        prompt = OptionalPrompt(variables=BasicVariables(name="Bob", age=25))
-        result1 = await prompt.render_async()
-        assert result1.system_prompt is not None
-        assert "Bob" in result1.system_prompt
-        assert ")" not in result1.system_prompt
-        assert "25" not in result1[1]
-
-        result2 = await prompt.render_async(role="developer")
         assert result2.system_prompt is not None
         assert "Bob (developer)" in result2.system_prompt
         assert "25" in result2.system_prompt
@@ -362,3 +338,102 @@ class TestVariablesNotDefined:
                     return super().render(**extra_vars)
 
         assert str(excinfo.value) == "Undeclared Variables"
+
+
+class TestAsyncBasePrompt:
+    """Test suite for AsyncBasePrompt functionality."""
+
+    def test_class_definition(self):
+        """Test AsyncBasePrompt class can be properly defined."""
+
+        class AsyncVars(BaseModel):
+            name: str
+            age: int
+
+        class MyAsyncPrompt(AsyncBasePrompt[AsyncVars]):
+            """System prompt: Hello {{name}}, age {{age}}"""
+
+            prompt_template: str = "How can I help {{name}}?"
+            variables: AsyncVars
+
+    @pytest.mark.asyncio
+    async def test_async_render_basic(self):
+        """Test basic async rendering functionality."""
+
+        class AsyncVars(BaseModel):
+            name: str
+            age: int
+
+        class MyAsyncPrompt(AsyncBasePrompt[AsyncVars]):
+            """Hello {{name}}, age {{age}}"""
+
+            prompt_template: str = "How can I help {{name}}?"
+            variables: AsyncVars
+
+        prompt = MyAsyncPrompt(variables=AsyncVars(name="Alice", age=30))
+        result = await prompt.render()
+
+        assert result.system_prompt is not None
+        assert "Hello Alice, age 30" in result.system_prompt
+        assert "How can I help Alice?" in result.user_prompt
+
+    @pytest.mark.asyncio
+    async def test_async_render_with_extra_vars(self):
+        """Test async rendering with additional variables."""
+
+        class AsyncVars(BaseModel):
+            name: str
+            age: int
+            topic: str | None = None
+
+        class MyAsyncPrompt(AsyncBasePrompt[AsyncVars]):
+            """Hello {{name}}, age {{age}}"""
+
+            prompt_template: str = "How can I help with {{topic}}?"
+            variables: AsyncVars
+
+        prompt = MyAsyncPrompt(variables=AsyncVars(name="Bob", age=25, topic="Python"))
+        result = await prompt.render()
+
+        assert result.system_prompt is not None
+        assert "Hello Bob, age 25" in result.system_prompt
+        assert "How can I help with Python?" in result.user_prompt
+
+    @pytest.mark.asyncio
+    async def test_async_render_without_system_prompt(self):
+        """Test async rendering without system prompt template."""
+
+        class AsyncVars(BaseModel):
+            name: str
+
+        class MyAsyncPrompt(AsyncBasePrompt[AsyncVars]):
+            prompt_template: str = "Hello {{name}}"
+            variables: AsyncVars
+
+        prompt = MyAsyncPrompt(variables=AsyncVars(name="Alice"))
+        result = await prompt.render()
+
+        assert result.system_prompt is None
+        assert result.user_prompt == "Hello Alice"
+
+
+class TestBasicPromptFunctionalityInAsyncContext:
+    # ...existing tests...
+
+    @pytest.mark.asyncio
+    async def test_sync_render_in_async_context(self):
+        """Test that sync render works correctly in async context."""
+
+        class SyncPrompt(BasePrompt[BasicVariables]):
+            """Hello {{name}}, age {{age}} {% if role %}, role {{role}}{% endif %}"""
+
+            prompt_template: str = "How are you {{name}}?"
+            variables: BasicVariables
+
+        prompt = SyncPrompt(variables=BasicVariables(name="Alice", age=30))
+
+        # This should work without raising RuntimeError about event loop
+        result = prompt.render()
+
+        assert result.system_prompt == "Hello Alice, age 30"
+        assert result.user_prompt == "How are you Alice?"

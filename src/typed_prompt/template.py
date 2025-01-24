@@ -87,7 +87,7 @@ class PromptMeta(ModelMetaclass):
         if not fetch_prompt_template or not variables_model:
             raise UndeclaredVariableError
         # Setup and validate templates
-        template_env: jinja2.Environment = cls._setup_template_env()
+        template_env: jinja2.Environment = cls.setup_template_env()
         prompt_template: str = cls._get_template_string(fetch_prompt_template)
         template_node = template_env.parse(prompt_template)
         template_vars = jinja2.meta.find_undeclared_variables(template_node)
@@ -130,7 +130,7 @@ class PromptMeta(ModelMetaclass):
         return cls
 
     @staticmethod
-    def _setup_template_env() -> jinja2.Environment:
+    def setup_template_env() -> jinja2.Environment:
         """Initialize and configure the Jinja2 environment.
 
         Returns:
@@ -138,7 +138,7 @@ class PromptMeta(ModelMetaclass):
         """
 
         return jinja2.Environment(
-            autoescape=False, trim_blocks=True, lstrip_blocks=True, enable_async=True, loader=jinja2.BaseLoader()
+            autoescape=False, trim_blocks=True, lstrip_blocks=True, enable_async=False, loader=jinja2.BaseLoader()
         )
 
     @staticmethod
@@ -282,15 +282,128 @@ class BasePrompt(BaseModel, Generic[T], ABC, metaclass=PromptMeta):
 
         return RenderedOutput(system_prompt, user_prompt)
 
-    async def render_async(self, **extra_vars: Any) -> RenderedOutput:
+
+class AsyncPromptMeta(PromptMeta):
+    """Metaclass for AsyncBasePrompt that enables async template rendering.
+
+    This metaclass extends PromptMeta to provide asynchronous template rendering
+    capabilities. It configures the Jinja2 environment with enable_async=True
+    and maintains the same validation features as PromptMeta.
+
+    It ensures:
+    1. All template validation is performed at class definition time
+    2. Template environment is configured for async rendering
+    3. Proper async template compilation
+
+    Example:
+        ```python
+        class AsyncUserPrompt(AsyncBasePrompt[UserVariables]):
+            '''System prompt template'''
+
+            prompt_template = "User prompt here"
+            variables: UserVariables
+
+
+        # Usage
+        prompt = AsyncUserPrompt(variables=vars)
+        result = await prompt.render()
+        ```
+    """
+
+    base_regex = re.compile(r"^AsyncBasePrompt(?:\[[^\]]+\])?$")
+
+    @staticmethod
+    def setup_template_env() -> jinja2.Environment:
+        """Initialize and configure the async Jinja2 environment.
+
+        Returns:
+            jinja2.Environment: Jinja environment configured for async rendering
+        """
+        return jinja2.Environment(
+            autoescape=False, trim_blocks=True, lstrip_blocks=True, enable_async=True, loader=jinja2.BaseLoader()
+        )
+
+
+class AsyncBasePrompt(BaseModel, Generic[T], ABC, metaclass=AsyncPromptMeta):
+    """Asynchronous version of BasePrompt for async template rendering.
+
+    This class provides the same functionality as BasePrompt but with async rendering
+    support. It's designed for use in async contexts where blocking template
+    rendering would be undesirable.
+
+    Features:
+    - Async template rendering
+    - Full type validation through Pydantic
+    - Template validation at class definition
+    - Support for system and user prompts
+
+    Template variables can be defined in three ways:
+    1. In the variables model (required fields)
+    2. In the custom render method (as keyword-only arguments)
+    3. As extra variables passed to render
+
+    Example:
+        ```python
+        class UserVars(BaseModel):
+            name: str
+            age: int
+
+
+        class AsyncPrompt(AsyncBasePrompt[UserVars]):
+            '''System: Hello {{name}}, age {{age}}'''
+
+            prompt_template = "How can I help {{name}}?"
+            variables: UserVars
+
+            async def render(self, *, topic: str, **extra_vars) -> RenderedOutput:
+                extra_vars["topic"] = topic
+                return await super().render(**extra_vars)
+
+
+        # Usage in async context
+        prompt = AsyncPrompt(variables=UserVars(name="Alice", age=30))
+        result = await prompt.render(topic="Python")
+        ```
+
+    Notes:
+        - Must be used in an async context
+        - All template rendering is performed asynchronously
+        - Compatible with asyncio's event loop
+        - Maintains all validation features of BasePrompt
+    """
+
+    system_prompt_template: str | None = None
+    prompt_template: str
+    variables: T
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, protected_namespaces=())
+
+    async def render(self, **extra_vars: Any) -> RenderedOutput:
+        """Asynchronously render prompt templates with provided variables.
+
+        This method combines the variables model data with any additional variables
+        to render both the system prompt (if defined) and the user prompt. All
+        rendering is performed asynchronously.
+
+        Args:
+            **extra_vars: Additional template variables not in variables model
+
+        Returns:
+            RenderedOutput: Named tuple containing system_prompt and user_prompt
+
+        Example:
+            ```python
+            result = await prompt.render(topic="Python", difficulty="advanced")
+            print(f"System: {result.system_prompt}")
+            print(f"User: {result.user_prompt}")
+            ```
+        """
         variables_dict = self.variables.model_dump()
         context = {**variables_dict, **extra_vars}
 
-        system_prompt = (
-            (await self.compiled_system_prompt_template.render_async(**context)).strip()
-            if self.compiled_system_prompt_template
-            else None
-        )
-        user_prompt = (await self.compiled_prompt_template.render_async(**context)).strip()
+        system_prompt = None
+        if self.compiled_system_prompt_template:
+            system_prompt = (await self.compiled_system_prompt_template.render_async(**context)).strip()
 
+        user_prompt = (await self.compiled_prompt_template.render_async(**context)).strip()
         return RenderedOutput(system_prompt, user_prompt)

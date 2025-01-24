@@ -139,7 +139,7 @@ preview = true
 fixable = ["ALL"]
 ignore = ["ANN401", "ANN003", "PLC2701", "N804"]
 [tool.ruff.lint.per-file-ignores]
-"examples/user.py" = ["T201", "INP001"]
+"examples/user.py" = ["T201", "INP001", "ANN201"]
 "tests/**.py" = ["ANN201", "PT011"]
 
 [tool.ruff.format]

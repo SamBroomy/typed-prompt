@@ -20,6 +20,6 @@ Key Features:
 """
 
 from typed_prompt import exceptions
-from typed_prompt.template import BasePrompt, RenderedOutput
+from typed_prompt.template import AsyncBasePrompt, BasePrompt, RenderedOutput
 
-__all__ = ["BasePrompt", "RenderedOutput", "exceptions"]
+__all__ = ["AsyncBasePrompt", "BasePrompt", "RenderedOutput", "exceptions"]

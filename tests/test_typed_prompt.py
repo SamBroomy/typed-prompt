@@ -415,3 +415,25 @@ class TestAsyncBasePrompt:
 
         assert result.system_prompt is None
         assert result.user_prompt == "Hello Alice"
+
+
+class TestBasicPromptFunctionalityInAsyncContext:
+    # ...existing tests...
+
+    @pytest.mark.asyncio
+    async def test_sync_render_in_async_context(self):
+        """Test that sync render works correctly in async context."""
+
+        class SyncPrompt(BasePrompt[BasicVariables]):
+            """Hello {{name}}, age {{age}} {% if role %}, role {{role}}{% endif %}"""
+
+            prompt_template: str = "How are you {{name}}?"
+            variables: BasicVariables
+
+        prompt = SyncPrompt(variables=BasicVariables(name="Alice", age=30))
+
+        # This should work without raising RuntimeError about event loop
+        result = prompt.render()
+
+        assert result.system_prompt == "Hello Alice, age 30"
+        assert result.user_prompt == "How are you Alice?"

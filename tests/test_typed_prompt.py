@@ -88,6 +88,31 @@ class TestBasicPromptFunctionality:
         assert "Bob (developer)" in result2.system_prompt
         assert "25" in result2.system_prompt
 
+    @pytest.mark.asyncio
+    async def test_async_render(self):
+        """Test that the async render method works correctly."""
+
+        class OptionalPrompt(BasePrompt[BasicVariables]):
+            """{{name}} {% if role %}({{role}}) - {{age}}{% endif %}"""
+
+            prompt_template: str = "Hello!"
+            variables: BasicVariables
+
+            def render(self, **extra_vars) -> RenderedOutput:
+                return super().render(**extra_vars)
+
+        prompt = OptionalPrompt(variables=BasicVariables(name="Bob", age=25))
+        result1 = await prompt.render_async()
+        assert result1.system_prompt is not None
+        assert "Bob" in result1.system_prompt
+        assert ")" not in result1.system_prompt
+        assert "25" not in result1[1]
+
+        result2 = await prompt.render_async(role="developer")
+        assert result2.system_prompt is not None
+        assert "Bob (developer)" in result2.system_prompt
+        assert "25" in result2.system_prompt
+
 
 class TestPromptValidation:
     """Test the validation features of the prompt system."""
@@ -168,9 +193,9 @@ class TestComplexTemplates:
             """{% if role %}
             {{name}} is a {{role}}
             {% if age < 30 %}
-            They are a junior {{role}}
+                They are a junior {{role}}
             {% else %}
-            They are a senior {{role}}
+                They are a senior {{role}}
             {% endif %}
             {% else %}
             {{name}} is {{age}} years old
@@ -196,6 +221,7 @@ class TestComplexTemplates:
 
         assert result2.system_prompt is not None
         assert "senior developer" in result2.system_prompt
+        assert result2.system_prompt == "Frank is a developer\n    They are a senior developer"
 
 
 class TestErrorHandling:

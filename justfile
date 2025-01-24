@@ -198,19 +198,28 @@ commit-all m="": stage-all
 [group('git')]
 commit m="":
     #!/bin/bash
+    set -e  # Exit immediately if a command exits with a non-zero status
+
+    # Attempt to run pre-commit hooks
+    echo "Running pre-commit hooks..."
+    if ! uv run pre-commit; then
+        echo "Pre-commit hooks failed. Aborting commit." >&2
+        exit 1
+    fi
+
     B='\033[0;34m' # Blue
     Y='\033[0;33m' # Yellow
     END='\033[0m'  # Reset color
     if [ -z "{{ m }}" ]; then
         # Capture both output and exit status
-        if ! m=$(just commit-message); then
+        if ! m=$(just generate-commit-message); then
             echo -e "${R}Error: ${Y}Failed to generate commit message${END}" >&2
             exit 1
         fi
     else
         m="{{ m }}"
     fi
-    git commit -m "$m"
+    git commit -m "$m" --no-verify
     echo -e "${Y}Commit message: ${B}$m${END}"
 
 # amend the last commit

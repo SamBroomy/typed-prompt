@@ -1,7 +1,6 @@
 import re
 from abc import ABC
-from inspect import Parameter, signature
-from textwrap import dedent
+from inspect import Parameter, cleandoc, signature
 from typing import Any, Generic, NamedTuple, TypeVar
 
 import jinja2
@@ -138,7 +137,9 @@ class PromptMeta(ModelMetaclass):
             jinja2.Environment: Configured Jinja2 environment for template processing
         """
 
-        return jinja2.Environment(autoescape=False, trim_blocks=True, lstrip_blocks=True)
+        return jinja2.Environment(
+            autoescape=False, trim_blocks=True, lstrip_blocks=True, enable_async=True, loader=jinja2.BaseLoader()
+        )
 
     @staticmethod
     def _get_template_string(template_string: str) -> str:
@@ -150,7 +151,7 @@ class PromptMeta(ModelMetaclass):
         Returns:
             str: Processed template string with consistent formatting
         """
-        return dedent(template_string).strip()
+        return cleandoc(template_string).strip()
 
 
 class RenderedOutput(NamedTuple):
